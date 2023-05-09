@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}YouTube Downloader{% endblock title %}</title>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Downloader</h1>
+        <form method="post" action="{% url 'download_video' %}">
+            {% csrf_token %}
+            <label for="url">Enter YouTube video URL:</label>
+            <input type="url" name="url" required>
+            <button type="submit">Submit</button>
+        </form>
+        {% block content %}
+        {% endblock content %}
+    </div>
+</body>
+</html>

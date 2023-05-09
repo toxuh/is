@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% if title and thumbnail_url %}
+        <h2>{{ title }}</h2>
+        <img src="{{ thumbnail_url }}" alt="Video Thumbnail">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.url.as_hidden }}
+            {{ form.resolution }}
+            <button type="submit">Download</button>
+        </form>
+    {% endif %}
+{% endblock content %}
