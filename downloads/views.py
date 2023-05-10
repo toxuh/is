@@ -57,9 +57,12 @@ def download_video(request):
 
             tmpdirname = tempfile.mkdtemp()
             try:
-                video_filename = video_stream.download(output_path=tmpdirname)
+                video_filename = os.path.join(tmpdirname, 'video.mp4')
+                video_stream.download(output_path=video_filename)
                 print(f'Video downloaded to {video_filename}')
-                audio_filename = audio_stream.download(output_path=tmpdirname)
+
+                audio_filename = os.path.join(tmpdirname, 'audio.mp4')
+                audio_stream.download(output_path=audio_filename)
                 print(f'Audio downloaded to {audio_filename}')
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
@@ -67,7 +70,7 @@ def download_video(request):
                 output_filename = f'ISAVER.CLICK_{short_hash}.mp4'
                 output_filepath = os.path.join(tmpdirname, output_filename)
 
-                command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filepath}'
+                command = f'ffmpeg -i "{video_filename}" -i "{audio_filename}" -f mp4 {output_filepath}'
                 args = shlex.split(command)
                 process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 if process.returncode != 0:
