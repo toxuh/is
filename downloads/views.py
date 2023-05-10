@@ -58,7 +58,9 @@ def download_video(request):
             tmpdirname = tempfile.mkdtemp()
             try:
                 video_filename = video_stream.download(output_path=tmpdirname)
+                print(f'Video downloaded to {video_filename}')
                 audio_filename = audio_stream.download(output_path=tmpdirname)
+                print(f'Audio downloaded to {audio_filename}')
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
@@ -66,7 +68,9 @@ def download_video(request):
 
                 command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filepath}'
                 args = shlex.split(command)
-                subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if process.returncode != 0:
+                    print(f'ffmpeg failed with error: {process.stderr.decode()}')
 
                 file_size = os.path.getsize(output_filepath)
                 response = StreamingHttpResponse(stream_video(output_filepath),
