@@ -51,7 +51,7 @@ def download_video(request):
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
 
-                output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
+                output_filename = f'ISAVER.CLICK_{short_hash}.mp4'
 
                 output_path = os.path.join('/videos', output_filename)
 
