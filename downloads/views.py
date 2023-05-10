@@ -1,8 +1,10 @@
 import tempfile
-import os
+# import os
 import hashlib
 import random
-import ffmpeg
+# import ffmpeg
+import subprocess
+import shlex
 
 from django import forms
 from django.shortcuts import render
@@ -11,13 +13,17 @@ from pytube import YouTube
 
 from .forms import VideoDownloadForm
 
-def file_stream(file_path):
-    with open(file_path, 'rb') as f:
-        while True:
-            data = f.read(8192)
-            if not data:
-                break
-            yield data
+def stream_video(video_input, audio_input, output_format='mp4'):
+    command = f'ffmpeg -i {video_input} -i {audio_input} -f {output_format} -'
+    args = shlex.split(command)
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    while True:
+        output = proc.stdout.read(8192)
+        if output:
+            yield output
+        else:
+            break
 
 def get_video_resolutions(url):
     youtube = YouTube(url)
@@ -53,15 +59,15 @@ def download_video(request):
                 video_filename = video_stream.download(output_path=tmpdirname)
                 audio_filename = audio_stream.download(output_path=tmpdirname)
 
-                video_input = ffmpeg.input(video_filename)
-                audio_input = ffmpeg.input(audio_filename)
+                # video_input = ffmpeg.input(video_filename)
+                # audio_input = ffmpeg.input(audio_filename)
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
-                output_path = os.path.join('/videos', output_filename)
-                ffmpeg.output(video_input, audio_input, output_path, vcodec='libx264', acodec='aac').run()
+                # output_path = os.path.join('/videos', output_filename)
+                # ffmpeg.output(video_input, audio_input, output_path, vcodec='libx264', acodec='aac').run()
 
-                response = StreamingHttpResponse(file_stream(output_path), content_type='video/mp4')
+                response = StreamingHttpResponse(stream_video(video_filename, audio_filename), content_type='video/mp4')
                 response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
                 return response
 
