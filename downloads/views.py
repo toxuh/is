@@ -11,9 +11,6 @@ from pytube import YouTube
 
 from .forms import VideoDownloadForm
 
-project_dir = os.path.dirname(os.path.abspath(__file__))
-videos_dir = os.path.join(project_dir, 'videos')
-
 def get_video_resolutions(url):
     youtube = YouTube(url)
     video_streams = youtube.streams.filter(only_video=True, file_extension='mp4').order_by('resolution').desc()
@@ -56,7 +53,7 @@ def download_video(request):
 
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
 
-                output_path = os.path.join(videos_dir, output_filename)
+                output_path = os.path.join('/videos', output_filename)
 
                 ffmpeg.output(video_input, audio_input, output_path, vcodec='copy', acodec='copy').run()
 
