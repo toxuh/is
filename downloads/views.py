@@ -16,18 +16,13 @@ from .forms import VideoDownloadForm
 range_re = re.compile(r'bytes\s*=\s*(\d*)-(\d*)')
 
 
-def stream_video(video_input, audio_input, output_format='mp4'):
-    command = f'ffmpeg -i {video_input} -i {audio_input} -f {output_format} -'
-    args = shlex.split(command)
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    while True:
-        output = proc.stdout.read(8192)
-        if output:
-            yield output
-        else:
-            break
-
+def stream_video(output_filepath):
+    with open(output_filepath, 'rb') as f:
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
+                break
+            yield chunk
 
 def get_video_resolutions(url):
     youtube = YouTube(url)
@@ -66,13 +61,14 @@ def download_video(request):
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
+                output_filepath = os.path.join(tmpdirname, output_filename)
 
                 command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filename}'
                 args = shlex.split(command)
                 subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                file_size = os.path.getsize(output_filename)
-                response = StreamingHttpResponse(stream_video(video_filename, audio_filename), content_type='application/octet-stream')
+                file_size = os.path.getsize(output_filepath)
+                response = StreamingHttpResponse(stream_video(output_filepath), content_type='application/octet-stream')  # Stream the output file
 
                 range_header = request.META.get('HTTP_RANGE', '').strip()
                 range_match = range_re.match(range_header)
