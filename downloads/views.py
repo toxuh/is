@@ -67,6 +67,11 @@ def download_video(request):
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
 
+                command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filename}'
+                args = shlex.split(command)
+                subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                file_size = os.path.getsize(output_filename)
                 response = StreamingHttpResponse(stream_video(video_filename, audio_filename), content_type='application/octet-stream')
 
                 range_header = request.META.get('HTTP_RANGE', '').strip()
@@ -76,12 +81,13 @@ def download_video(request):
                     if range_type == 'bytes':
                         start, end = ranges.split('-')
                         start = int(start.strip())
-                        end = int(end.strip()) if end.strip() else os.path.getsize(video_filename) - 1
+                        end = int(end.strip()) if end.strip() else file_size - 1
                         response.status_code = 206
-                        response['Content-Range'] = f'bytes {start}-{end}/{os.path.getsize(video_filename)}'
+                        response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
 
-                response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+                response['Content-Disposition'] = 'attachment;'
                 response['Accept-Ranges'] = 'bytes'
+                response['Content-Length'] = str(file_size)
 
                 return response
 
