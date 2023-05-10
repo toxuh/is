@@ -71,13 +71,16 @@ def download_video(request):
                 output_filename = f'ISAVER.CLICK_{short_hash}.mp4'
                 output_filepath = os.path.join(tmpdirname, output_filename)
 
-                command = f'ffmpeg -i "{video_file_path}" -i "{audio_file_path}" -f mp4 "{output_filepath}"'
-                args = shlex.split(command)
-                process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if process.returncode != 0:
-                    print(f'ffmpeg failed with error: {process.stderr.decode()}')
-                else:
-                    print(f'ffmpeg succeeded: {process.stdout.decode()}')
+                try:
+                    command = f'ffmpeg -i "{video_file_path}" -i "{audio_file_path}" -f mp4 "{output_filepath}"'
+                    args = shlex.split(command)
+                    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+                    if process.returncode != 0:
+                        print(f'ffmpeg failed with error: {process.stderr.decode()}')
+                    else:
+                        print(f'ffmpeg succeeded: {process.stdout.decode()}')
+                except subprocess.TimeoutExpired:
+                    print('ffmpeg command timed out')
 
                 file_size = os.path.getsize(output_filepath)
                 response = StreamingHttpResponse(stream_video(output_filepath),
