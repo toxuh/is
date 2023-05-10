@@ -67,7 +67,7 @@ def download_video(request):
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
 
-                response = StreamingHttpResponse(stream_video(video_filename, audio_filename), content_type='video/mp4')
+                response = StreamingHttpResponse(stream_video(video_filename, audio_filename), content_type='application/octet-stream')
 
                 range_header = request.META.get('HTTP_RANGE', '').strip()
                 range_match = range_re.match(range_header)
