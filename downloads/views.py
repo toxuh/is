@@ -6,10 +6,18 @@ import ffmpeg
 
 from django import forms
 from django.shortcuts import render
-from django.http import FileResponse
+from django.http import StreamingHttpResponse
 from pytube import YouTube
 
 from .forms import VideoDownloadForm
+
+def file_stream(file_path):
+    with open(file_path, 'rb') as f:
+        while True:
+            data = f.read(8192)
+            if not data:
+                break
+            yield data
 
 def get_video_resolutions(url):
     youtube = YouTube(url)
@@ -21,7 +29,6 @@ def get_video_resolutions(url):
             resolutions.add(int(stream.resolution.replace('p', '')))
 
     return sorted(list(resolutions), reverse=True)
-
 
 def download_video(request):
     title, thumbnail_url, resolutions = None, None, None
@@ -54,7 +61,9 @@ def download_video(request):
                 output_path = os.path.join('/videos', output_filename)
                 ffmpeg.output(video_input, audio_input, output_path, vcodec='libx264', acodec='aac').run()
 
-                return FileResponse(open(output_path, 'rb'), as_attachment=True, filename=output_filename)
+                response = StreamingHttpResponse(file_stream(output_path), content_type='video/mp4')
+                response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+                return response
 
     return render(request, 'download_video.html',
                   {'form': form, 'title': title, 'thumbnail_url': thumbnail_url, 'resolutions': resolutions})
