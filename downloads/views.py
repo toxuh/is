@@ -1,10 +1,10 @@
+import os
 import tempfile
-# import os
 import hashlib
 import random
-# import ffmpeg
 import subprocess
 import shlex
+import re
 
 from django import forms
 from django.shortcuts import render
@@ -12,6 +12,9 @@ from django.http import StreamingHttpResponse
 from pytube import YouTube
 
 from .forms import VideoDownloadForm
+
+range_re = re.compile(r'bytes\s*=\s*(\d*)-(\d*)')
+
 
 def stream_video(video_input, audio_input, output_format='mp4'):
     command = f'ffmpeg -i {video_input} -i {audio_input} -f {output_format} -'
@@ -25,6 +28,7 @@ def stream_video(video_input, audio_input, output_format='mp4'):
         else:
             break
 
+
 def get_video_resolutions(url):
     youtube = YouTube(url)
     video_streams = youtube.streams.filter(only_video=True, file_extension='mp4').order_by('resolution').desc()
@@ -35,6 +39,7 @@ def get_video_resolutions(url):
             resolutions.add(int(stream.resolution.replace('p', '')))
 
     return sorted(list(resolutions), reverse=True)
+
 
 def download_video(request):
     title, thumbnail_url, resolutions = None, None, None
@@ -59,16 +64,25 @@ def download_video(request):
                 video_filename = video_stream.download(output_path=tmpdirname)
                 audio_filename = audio_stream.download(output_path=tmpdirname)
 
-                # video_input = ffmpeg.input(video_filename)
-                # audio_input = ffmpeg.input(audio_filename)
-
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
-                # output_path = os.path.join('/videos', output_filename)
-                # ffmpeg.output(video_input, audio_input, output_path, vcodec='libx264', acodec='aac').run()
 
                 response = StreamingHttpResponse(stream_video(video_filename, audio_filename), content_type='video/mp4')
+
+                range_header = request.META.get('HTTP_RANGE', '').strip()
+                range_match = range_re.match(range_header)
+                if range_match:
+                    range_type, ranges = range_match.groups()
+                    if range_type == 'bytes':
+                        start, end = ranges.split('-')
+                        start = int(start.strip())
+                        end = int(end.strip()) if end.strip() else os.path.getsize(video_filename) - 1
+                        response.status_code = 206
+                        response['Content-Range'] = f'bytes {start}-{end}/{os.path.getsize(video_filename)}'
+
                 response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+                response['Accept-Ranges'] = 'bytes'
+
                 return response
 
     return render(request, 'download_video.html',
