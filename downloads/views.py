@@ -1,8 +1,12 @@
 import tempfile
+import os
+import hashlib
+import random
 import ffmpeg
 
 from django import forms
 from django.shortcuts import render
+from django.http import FileResponse
 from pytube import YouTube
 
 from .forms import VideoDownloadForm
@@ -17,6 +21,7 @@ def get_video_resolutions(url):
             resolutions.add(int(stream.resolution.replace('p', '')))
 
     return sorted(list(resolutions), reverse=True)
+
 
 def download_video(request):
     title, thumbnail_url, resolutions = None, None, None
@@ -43,6 +48,16 @@ def download_video(request):
 
                 video_input = ffmpeg.input(video_filename)
                 audio_input = ffmpeg.input(audio_filename)
-                ffmpeg.output(video_input, audio_input, 'final_output.mp4', vcodec='copy', acodec='copy').run()
 
-    return render(request, 'download_video.html', {'form': form, 'title': title, 'thumbnail_url': thumbnail_url, 'resolutions': resolutions})
+                short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
+
+                output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
+
+                output_path = os.path.join('/videos', output_filename)
+
+                ffmpeg.output(video_input, audio_input, output_path, vcodec='copy', acodec='copy').run()
+
+                return FileResponse(open(output_path, 'rb'), as_attachment=True, filename=output_filename)
+
+    return render(request, 'download_video.html',
+                  {'form': form, 'title': title, 'thumbnail_url': thumbnail_url, 'resolutions': resolutions})
