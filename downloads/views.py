@@ -55,7 +55,7 @@ def download_video(request):
                                              file_extension='mp4').first()
             audio_stream = yt.streams.filter(only_audio=True).first()
 
-            tmpdirname = '/videos'
+            tmpdirname = tempfile.mkdtemp()
             try:
                 video_filename = video_stream.download(output_path=tmpdirname)
                 audio_filename = audio_stream.download(output_path=tmpdirname)
@@ -70,7 +70,7 @@ def download_video(request):
 
                 file_size = os.path.getsize(output_filepath)
                 response = StreamingHttpResponse(stream_video(output_filepath),
-                                                 content_type='application/octet-stream')  # Stream the output file
+                                                 content_type='application/octet-stream')
 
                 range_header = request.META.get('HTTP_RANGE', '').strip()
                 range_match = range_re.match(range_header)
