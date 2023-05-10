@@ -68,15 +68,16 @@ def download_video(request):
                 print(f'Audio downloaded to {audio_file_path}')
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
-                # output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
                 output_filename = f'ISAVER.CLICK_{short_hash}.mp4'
                 output_filepath = os.path.join(tmpdirname, output_filename)
 
-                command = f'ffmpeg -i "{video_file_path}" -i "{audio_file_path}" -f mp4 {output_filepath}'
+                command = f'ffmpeg -i "{video_file_path}" -i "{audio_file_path}" -f mp4 "{output_filepath}"'
                 args = shlex.split(command)
                 process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 if process.returncode != 0:
                     print(f'ffmpeg failed with error: {process.stderr.decode()}')
+                else:
+                    print(f'ffmpeg succeeded: {process.stdout.decode()}')
 
                 file_size = os.path.getsize(output_filepath)
                 response = StreamingHttpResponse(stream_video(output_filepath),
