@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import hashlib
 import random
@@ -14,7 +15,6 @@ from pytube import YouTube
 from .forms import VideoDownloadForm
 
 range_re = re.compile(r'bytes\s*=\s*(\d*)-(\d*)')
-
 
 def stream_video(output_filepath):
     with open(output_filepath, 'rb') as f:
@@ -55,7 +55,8 @@ def download_video(request):
                                              file_extension='mp4').first()
             audio_stream = yt.streams.filter(only_audio=True).first()
 
-            with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpdirname = tempfile.mkdtemp()  # Create temporary directory without a context manager
+            try:
                 video_filename = video_stream.download(output_path=tmpdirname)
                 audio_filename = audio_stream.download(output_path=tmpdirname)
 
@@ -68,7 +69,8 @@ def download_video(request):
                 subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
                 file_size = os.path.getsize(output_filepath)
-                response = StreamingHttpResponse(stream_video(output_filepath), content_type='application/octet-stream')  # Stream the output file
+                response = StreamingHttpResponse(stream_video(output_filepath),
+                                                 content_type='application/octet-stream')  # Stream the output file
 
                 range_header = request.META.get('HTTP_RANGE', '').strip()
                 range_match = range_re.match(range_header)
@@ -86,6 +88,40 @@ def download_video(request):
                 response['Content-Length'] = str(file_size)
 
                 return response
+            finally:
+                shutil.rmtree(tmpdirname)
+
+            # with tempfile.TemporaryDirectory() as tmpdirname:
+            #     video_filename = video_stream.download(output_path=tmpdirname)
+            #     audio_filename = audio_stream.download(output_path=tmpdirname)
+            #
+            #     short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
+            #     output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
+            #     output_filepath = os.path.join(tmpdirname, output_filename)
+            #
+            #     command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filepath}'
+            #     args = shlex.split(command)
+            #     subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #
+            #     file_size = os.path.getsize(output_filepath)
+            #     response = StreamingHttpResponse(stream_video(output_filepath), content_type='application/octet-stream')  # Stream the output file
+            #
+            #     range_header = request.META.get('HTTP_RANGE', '').strip()
+            #     range_match = range_re.match(range_header)
+            #     if range_match:
+            #         range_type, ranges = range_match.groups()
+            #         if range_type == 'bytes':
+            #             start, end = ranges.split('-')
+            #             start = int(start.strip())
+            #             end = int(end.strip()) if end.strip() else file_size - 1
+            #             response.status_code = 206
+            #             response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
+            #
+            #     response['Content-Disposition'] = 'attachment;'
+            #     response['Accept-Ranges'] = 'bytes'
+            #     response['Content-Length'] = str(file_size)
+            #
+            #     return response
 
     return render(request, 'download_video.html',
                   {'form': form, 'title': title, 'thumbnail_url': thumbnail_url, 'resolutions': resolutions})
