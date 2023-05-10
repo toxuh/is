@@ -63,7 +63,7 @@ def download_video(request):
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
                 output_filepath = os.path.join(tmpdirname, output_filename)
 
-                command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filename}'
+                command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filepath}'
                 args = shlex.split(command)
                 subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
