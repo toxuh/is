@@ -1,9 +1,9 @@
 import tempfile
+import ffmpeg
 
 from django import forms
 from django.shortcuts import render
 from pytube import YouTube
-from moviepy.editor import VideoFileClip, AudioFileClip
 
 from .forms import VideoDownloadForm
 
@@ -41,9 +41,8 @@ def download_video(request):
                 video_filename = video_stream.download(output_path=tmpdirname)
                 audio_filename = audio_stream.download(output_path=tmpdirname)
 
-                video_clip = VideoFileClip(video_filename)
-                audio_clip = AudioFileClip(audio_filename)
-                final_clip = video_clip.set_audio(audio_clip)
-                final_clip.write_videofile('final_output.mp4', codec='libx264', threads=4)
+                video_input = ffmpeg.input(video_filename)
+                audio_input = ffmpeg.input(audio_filename)
+                ffmpeg.output(video_input, audio_input, 'final_output.mp4', vcodec='copy', acodec='copy').run()
 
     return render(request, 'download_video.html', {'form': form, 'title': title, 'thumbnail_url': thumbnail_url, 'resolutions': resolutions})
