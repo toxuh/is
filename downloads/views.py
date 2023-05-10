@@ -1,5 +1,5 @@
 import os
-import shutil
+# import shutil
 import tempfile
 import hashlib
 import random
@@ -89,7 +89,8 @@ def download_video(request):
 
                 return response
             finally:
-                shutil.rmtree(tmpdirname)
+                print(1)
+                # shutil.rmtree(tmpdirname)
 
             # with tempfile.TemporaryDirectory() as tmpdirname:
             #     video_filename = video_stream.download(output_path=tmpdirname)
