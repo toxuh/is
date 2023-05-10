@@ -57,20 +57,22 @@ def download_video(request):
 
             tmpdirname = tempfile.mkdtemp()
             try:
-                video_filename = os.path.join(tmpdirname, 'video.mp4')
-                video_stream.download(output_path=video_filename)
-                print(f'Video downloaded to {video_filename}')
+                video_filename = 'video.mp4'
+                video_stream.download(output_path=tmpdirname, filename=video_filename)
+                video_file_path = os.path.join(tmpdirname, video_filename)
+                print(f'Video downloaded to {video_file_path}')
 
-                audio_filename = os.path.join(tmpdirname, 'audio.mp4')
-                audio_stream.download(output_path=audio_filename)
-                print(f'Audio downloaded to {audio_filename}')
+                audio_filename = 'audio.mp4'
+                audio_stream.download(output_path=tmpdirname, filename=audio_filename)
+                audio_file_path = os.path.join(tmpdirname, audio_filename)
+                print(f'Audio downloaded to {audio_file_path}')
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
                 # output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
                 output_filename = f'ISAVER.CLICK_{short_hash}.mp4'
                 output_filepath = os.path.join(tmpdirname, output_filename)
 
-                command = f'ffmpeg -i "{video_filename}" -i "{audio_filename}" -f mp4 {output_filepath}'
+                command = f'ffmpeg -i "{video_file_path}" -i "{audio_file_path}" -f mp4 {output_filepath}'
                 args = shlex.split(command)
                 process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 if process.returncode != 0:
