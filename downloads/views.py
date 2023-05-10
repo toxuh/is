@@ -63,7 +63,8 @@ def download_video(request):
                 print(f'Audio downloaded to {audio_filename}')
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
-                output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
+                # output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
+                output_filename = f'ISAVER.CLICK_{short_hash}.mp4'
                 output_filepath = os.path.join(tmpdirname, output_filename)
 
                 command = f'ffmpeg -i {video_filename} -i {audio_filename} -f mp4 {output_filepath}'
