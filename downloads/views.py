@@ -50,12 +50,9 @@ def download_video(request):
                 audio_input = ffmpeg.input(audio_filename)
 
                 short_hash = hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:5]
-
                 output_filename = f'ISAVER.CLICK_{title[:10]}_{short_hash}.mp4'
-
                 output_path = os.path.join('/videos', output_filename)
-
-                ffmpeg.output(video_input, audio_input, output_path, vcodec='copy', acodec='copy').run()
+                ffmpeg.output(video_input, audio_input, output_path, vcodec='libx264', acodec='aac').run()
 
                 return FileResponse(open(output_path, 'rb'), as_attachment=True, filename=output_filename)
 
